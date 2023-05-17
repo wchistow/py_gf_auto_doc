@@ -35,9 +35,9 @@ def get_prog_elems(file: str) -> list[tuple[str, str, str | None]]:
                 result.append(
                     (
                         'func',
-                        f'{name}({"*, ".join(pos_only_args)}{", " if pos_only_args else ""}' +
+                        f'{name}({", ".join(pos_only_args)}{"/, " if pos_only_args else ""}' +
                         f'{", ".join(other_args)}{", " if kw_only_args else ""}' +
-                        f'{"/, " if kw_only_args else ""}{", ".join(kw_only_args)})' +
+                        f'{"*, " if kw_only_args else ""}{", ".join(kw_only_args)})' +
                         f'{(" -> " + ast.unparse(elem.returns)) if elem.returns else ""}',  # type: ignore[attr-defined]
                         ast.get_docstring(elem)
                     )
