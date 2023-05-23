@@ -44,6 +44,8 @@ def generate_doc(path: str, out_dir: str, inner_dir: str = ''):
                       and item != '.'):
         generate_doc(path, out_dir, os.path.join(inner_dir, directory))
 
+    _clean_empty_dirs(out_dir)
+
 
 def _get_classes_templates(classes: Iterable[ClassT]) -> list[str]:
     result = []
@@ -70,6 +72,16 @@ def _get_funcs_templates(funcs: Iterable[FuncT]) -> list[str]:
                                              docstring=docstring or '')
         result.append(func_template)
     return result
+
+
+def _clean_empty_dirs(path: str) -> None:
+    """Рекурсивно обходит дерево каталогов, начиная с `path`, удаляя все пустые каталоги."""
+    for item in os.listdir(path):
+        if os.path.isdir(os.path.join(path, item)):
+            if len(os.listdir(os.path.join(path, item))) == 0:
+                os.rmdir(os.path.join(path, item))
+            else:
+                _clean_empty_dirs(os.path.join(path, item))
 
 
 def get_py_files(path: str) -> list[str]:
