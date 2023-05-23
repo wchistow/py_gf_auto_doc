@@ -1,5 +1,6 @@
 """В этом модуле находится код генерирования документации."""
 import ast
+from collections.abc import Iterable
 from typing import TypeAlias
 import os
 
@@ -17,7 +18,6 @@ def generate_doc(path: str, out_dir: str, inner_dir: str = ''):
     """Главная функция генерирования документации."""
     path = os.path.abspath(path)
 
-    print(f'`inner_dir: {inner_dir}`')
     if not os.path.exists(out_dir):
         raise FileNotFoundError(f'Каталог {out_dir} не существует.')
     if inner_dir and not os.path.exists(os.path.join(out_dir, inner_dir)):
@@ -27,26 +27,8 @@ def generate_doc(path: str, out_dir: str, inner_dir: str = ''):
         py_objs = get_prog_elems(open(os.path.join(path, os.path.join(inner_dir, py_file)),
                                       encoding='utf-8').read())
 
-        classes = []
-        for typ, signature, docstring, meths in filter(lambda elem: elem[0] == 'class', py_objs):
-            meths_templates = []
-            for _, meth_name, meth_signature, meth_docstring in meths:
-                meths_templates.append(FUNC_TEMPLATE.format(name=meth_name,
-                                                            signature=meth_signature,
-                                                            docstring=meth_docstring or ''
-                                                            )
-                                       )
-            class_template = CLASS_TEMPLATE.format(signature=signature,
-                                                   docstring=docstring or '',
-                                                   meths='\n'.join(meths_templates))
-            classes.append(class_template)
-
-        funcs = []
-        for typ, name, signature, docstring in filter(lambda elem: elem[0] == 'func', py_objs):
-            func_template = FUNC_TEMPLATE.format(name=name,
-                                                 signature=signature,
-                                                 docstring=docstring or '')
-            funcs.append(func_template)
+        classes = _get_classes_templates(filter(lambda elem: elem[0] == 'class', py_objs))  # type: ignore[arg-type]
+        funcs = _get_funcs_templates(filter(lambda elem: elem[0] == 'func', py_objs))  # type: ignore[arg-type]
 
         out_text = FILE_TEMPLATE.format(filename=py_file,
                                         classes='\n'.join(classes),
@@ -61,6 +43,33 @@ def generate_doc(path: str, out_dir: str, inner_dir: str = ''):
                       if os.path.isdir(os.path.join(path, os.path.join(inner_dir, item)))
                       and item != '.'):
         generate_doc(path, out_dir, os.path.join(inner_dir, directory))
+
+
+def _get_classes_templates(classes: Iterable[ClassT]) -> list[str]:
+    result = []
+    for typ, signature, docstring, meths in classes:
+        meths_templates = []
+        for _, meth_name, meth_signature, meth_docstring in meths:
+            meths_templates.append(FUNC_TEMPLATE.format(name=meth_name,
+                                                        signature=meth_signature,
+                                                        docstring=meth_docstring or ''
+                                                        )
+                                   )
+        class_template = CLASS_TEMPLATE.format(signature=signature,
+                                               docstring=docstring or '',
+                                               meths='\n'.join(meths_templates))
+        result.append(class_template)
+    return result
+
+
+def _get_funcs_templates(funcs: Iterable[FuncT]) -> list[str]:
+    result = []
+    for typ, name, signature, docstring in funcs:
+        func_template = FUNC_TEMPLATE.format(name=name,
+                                             signature=signature,
+                                             docstring=docstring or '')
+        result.append(func_template)
+    return result
 
 
 def get_py_files(path: str) -> list[str]:
