@@ -1,0 +1,11 @@
+### `{name}`
+
+Сигнатура:
+
+```python
+{signature}
+```
+
+{docstring}
+
+---
