@@ -1,6 +1,7 @@
 """В этом модуле находится код генерирования документации."""
 import ast
 from collections.abc import Iterable
+from pathlib import Path
 from typing import TypeAlias
 import os
 
@@ -20,19 +21,25 @@ def generate_doc(path: str, out_dir: str) -> None:
         raise FileNotFoundError(f'Каталог {out_dir} не существует.')
     path = os.path.abspath(path)
 
-    _generate_doc(path, out_dir)
+    summary = '\n'.join(_generate_doc(path, out_dir))
 
     with open(os.path.join(out_dir, 'README.md'), 'w', encoding='utf-8') as f:
         f.write('> Эта документация сгенерирована утилитой `py_gf_auto_doc`.\n')
 
+    with open(os.path.join(out_dir, 'SUMMARY.md'), 'w', encoding='utf-8') as f:
+        f.write(summary)
 
-def _generate_doc(path: str, out_dir: str, inner_dir: str = ''):
+
+def _generate_doc(path: str, out_dir: str, inner_dir: str = '') -> list[str]:
     """Основная логика генерирования документации."""
+    summary: list[str] = []
+    indent = ' ' * (4 * len(Path(inner_dir).parents))
+
     if inner_dir and not os.path.exists(os.path.join(out_dir, inner_dir)):
         os.mkdir(os.path.join(out_dir, inner_dir))
 
     for py_file in get_py_files(os.path.join(path, inner_dir)):
-        py_objs = get_prog_elems(open(os.path.join(path, os.path.join(inner_dir, py_file)),
+        py_objs = get_prog_elems(open(os.path.join(path, inner_dir, py_file),
                                       encoding='utf-8').read())
 
         classes = _get_classes_templates(filter(lambda elem: elem[0] == 'class', py_objs))  # type: ignore[arg-type]
@@ -42,17 +49,21 @@ def _generate_doc(path: str, out_dir: str, inner_dir: str = ''):
                                         classes='\n'.join(classes),
                                         funcs='\n'.join(funcs))
 
-        with open(os.path.join(os.path.join(out_dir, inner_dir),
-                               '.'.join(py_file.split('.')[:-1])) + '.md',
-                  'w', encoding='utf-8') as f:
+        filename = '.'.join(py_file.split('.')[:-1])
+
+        with open(os.path.join(out_dir, inner_dir, filename + '.md'), 'w', encoding='utf-8') as f:
             f.write(out_text)
 
-    for directory in (item for item in os.listdir(path)
-                      if os.path.isdir(os.path.join(path, os.path.join(inner_dir, item)))
-                      and item != '.'):
-        _generate_doc(path, out_dir, os.path.join(inner_dir, directory))
+        summary.append(f'{indent}* [{filename}]({os.path.join(inner_dir, filename + ".md")})')
 
-    _clean_empty_dirs(out_dir)
+    for directory in (item for item in os.listdir(path)
+                      if os.path.isdir(os.path.join(path, inner_dir, item))
+                      and item != '.'):
+        if len(get_py_files(os.path.join(path, inner_dir, directory))) != 0:
+            summary.append(f'{indent}* [{directory}]()')
+            summary.extend(_generate_doc(path, out_dir, os.path.join(inner_dir, directory)))
+
+    return summary
 
 
 def _get_classes_templates(classes: Iterable[ClassT]) -> list[str]:
@@ -80,16 +91,6 @@ def _get_funcs_templates(funcs: Iterable[FuncT]) -> list[str]:
                                              docstring=docstring or '')
         result.append(func_template)
     return result
-
-
-def _clean_empty_dirs(path: str) -> None:
-    """Рекурсивно обходит дерево каталогов, начиная с `path`, удаляя все пустые каталоги."""
-    for item in os.listdir(path):
-        if os.path.isdir(os.path.join(path, item)):
-            if len(os.listdir(os.path.join(path, item))) == 0:
-                os.rmdir(os.path.join(path, item))
-            else:
-                _clean_empty_dirs(os.path.join(path, item))
 
 
 def get_py_files(path: str) -> list[str]:
