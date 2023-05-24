@@ -14,12 +14,20 @@ FUNC_TEMPLATE = open(f'{BASE_PATH}/templates/func.txt', encoding='utf-8').read()
 CLASS_TEMPLATE = open(f'{BASE_PATH}/templates/class.txt', encoding='utf-8').read()
 
 
-def generate_doc(path: str, out_dir: str, inner_dir: str = ''):
+def generate_doc(path: str, out_dir: str) -> None:
     """Главная функция генерирования документации."""
-    path = os.path.abspath(path)
-
     if not os.path.exists(out_dir):
         raise FileNotFoundError(f'Каталог {out_dir} не существует.')
+    path = os.path.abspath(path)
+
+    _generate_doc(path, out_dir)
+
+    with open(os.path.join(out_dir, 'README.md'), 'w', encoding='utf-8') as f:
+        f.write('> Эта документация сгенерирована утилитой `py_gf_auto_doc`.\n')
+
+
+def _generate_doc(path: str, out_dir: str, inner_dir: str = ''):
+    """Основная логика генерирования документации."""
     if inner_dir and not os.path.exists(os.path.join(out_dir, inner_dir)):
         os.mkdir(os.path.join(out_dir, inner_dir))
 
@@ -42,7 +50,7 @@ def generate_doc(path: str, out_dir: str, inner_dir: str = ''):
     for directory in (item for item in os.listdir(path)
                       if os.path.isdir(os.path.join(path, os.path.join(inner_dir, item)))
                       and item != '.'):
-        generate_doc(path, out_dir, os.path.join(inner_dir, directory))
+        _generate_doc(path, out_dir, os.path.join(inner_dir, directory))
 
     _clean_empty_dirs(out_dir)
 
