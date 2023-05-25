@@ -1,0 +1,18 @@
+[project]
+name = "py_gf_auto_doc"
+version = "0.1.0"
+authors = [
+  { name="Vladimir Chistov", email="wchistow@yandex.ru" },
+]
+description = "Auto doc generator for GitFlic book"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://gitflic.ru/project/wchistow/py_gf_auto_doc"
+"Bug Tracker" = "https://gitflic.ru/project/wchistow/py_gf_auto_doc/issue"

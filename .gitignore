@@ -2,3 +2,5 @@
 .mypy_cache
 __pycache__
 venv
+dist
+src/py_gf_auto_doc.egg-info
