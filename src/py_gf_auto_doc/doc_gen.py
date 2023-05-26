@@ -42,12 +42,15 @@ def _generate_doc(path: str, out_dir: str, inner_dir: str = '') -> list[str]:
         py_objs = get_prog_elems(open(os.path.join(path, inner_dir, py_file),
                                       encoding='utf-8').read())
 
-        classes = _get_classes_templates(filter(lambda elem: elem[0] == 'class', py_objs))  # type: ignore[arg-type]
-        funcs = _get_funcs_templates(filter(lambda elem: elem[0] == 'func', py_objs))  # type: ignore[arg-type]
+        classes = '\n'.join(_get_classes_templates(
+            filter(lambda elem: elem[0] == 'class', py_objs)))  # type: ignore[arg-type]
+        funcs = '\n'.join(_get_funcs_templates(
+            filter(lambda elem: elem[0] == 'func', py_objs)))  # type: ignore[arg-type]
 
         out_text = FILE_TEMPLATE.format(filename=py_file,
-                                        classes='\n'.join(classes),
-                                        funcs='\n'.join(funcs))
+                                        classes=classes or '*Нет классов*',
+                                        funcs=funcs or '*Нет функций*'
+                                        )
 
         filename = '.'.join(py_file.split('.')[:-1])
 
