@@ -10,9 +10,12 @@ ClassT: TypeAlias = tuple[str, str, str | None, list[FuncT]]
 
 BASE_PATH = os.path.dirname(__file__)
 
-FILE_TEMPLATE = open(f'{BASE_PATH}/templates/file.txt', encoding='utf-8').read()
-FUNC_TEMPLATE = open(f'{BASE_PATH}/templates/func.txt', encoding='utf-8').read()
-CLASS_TEMPLATE = open(f'{BASE_PATH}/templates/class.txt', encoding='utf-8').read()
+with open(f'{BASE_PATH}/templates/file.txt', encoding='utf-8') as f:
+    FILE_TEMPLATE = f.read()
+with open(f'{BASE_PATH}/templates/func.txt', encoding='utf-8') as f:
+    FUNC_TEMPLATE = f.read()
+with open(f'{BASE_PATH}/templates/class.txt', encoding='utf-8') as f:
+    CLASS_TEMPLATE = f.read()
 
 
 def generate_doc(path: str, out_dir: str) -> None:
@@ -23,11 +26,11 @@ def generate_doc(path: str, out_dir: str) -> None:
 
     summary = '\n'.join(_generate_doc(path, out_dir))
 
-    with open(os.path.join(out_dir, 'README.md'), 'w', encoding='utf-8') as f:
-        f.write('> Эта документация сгенерирована утилитой `py_gf_auto_doc`.\n')
+    with open(os.path.join(out_dir, 'README.md'), 'w', encoding='utf-8') as readme:
+        readme.write('> Эта документация сгенерирована утилитой `py_gf_auto_doc`.\n')
 
-    with open(os.path.join(out_dir, 'SUMMARY.md'), 'w', encoding='utf-8') as f:
-        f.write(summary)
+    with open(os.path.join(out_dir, 'SUMMARY.md'), 'w', encoding='utf-8') as summ:
+        summ.write(summary)
 
 
 def _generate_doc(path: str, out_dir: str, inner_dir: str = '') -> list[str]:
@@ -39,8 +42,8 @@ def _generate_doc(path: str, out_dir: str, inner_dir: str = '') -> list[str]:
         os.mkdir(os.path.join(out_dir, inner_dir))
 
     for py_file in get_py_files(os.path.join(path, inner_dir)):
-        py_objs = get_prog_elems(open(os.path.join(path, inner_dir, py_file),
-                                      encoding='utf-8').read())
+        with open(os.path.join(path, inner_dir, py_file), encoding='utf-8') as py_f:
+            py_objs = get_prog_elems(py_f.read())
 
         classes = '\n'.join(_get_classes_templates(
             filter(lambda elem: elem[0] == 'class', py_objs)))  # type: ignore[arg-type]
@@ -54,8 +57,9 @@ def _generate_doc(path: str, out_dir: str, inner_dir: str = '') -> list[str]:
 
         filename = '.'.join(py_file.split('.')[:-1])
 
-        with open(os.path.join(out_dir, inner_dir, filename + '.md'), 'w', encoding='utf-8') as f:
-            f.write(out_text)
+        with open(os.path.join(out_dir, inner_dir, filename + '.md'),
+                  'w', encoding='utf-8') as result:
+            result.write(out_text)
 
         summary.append(f'{indent}* [{filename}]({os.path.join(inner_dir, filename + ".md")})')
 
@@ -70,8 +74,9 @@ def _generate_doc(path: str, out_dir: str, inner_dir: str = '') -> list[str]:
 
 
 def _get_classes_templates(classes: Iterable[ClassT]) -> list[str]:
+    """Возвращает список шаблонов `CLASS_TEMPLATE` отформатированных данными из `classes`."""
     result = []
-    for typ, signature, docstring, meths in classes:
+    for _, signature, docstring, meths in classes:
         meths_templates = []
         for _, meth_name, meth_signature, meth_docstring in meths:
             meths_templates.append(FUNC_TEMPLATE.format(name=meth_name,
@@ -87,8 +92,9 @@ def _get_classes_templates(classes: Iterable[ClassT]) -> list[str]:
 
 
 def _get_funcs_templates(funcs: Iterable[FuncT]) -> list[str]:
+    """Возвращает список шаблонов `FUNC_TEMPLATE` отформатированных данными из `funcs`."""
     result = []
-    for typ, name, signature, docstring in funcs:
+    for _, name, signature, docstring in funcs:
         func_template = FUNC_TEMPLATE.format(name=name,
                                              signature=signature,
                                              docstring=docstring or '')
